@@ -770,12 +770,18 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, autoScrollTick()
 
 	case tea.MouseReleaseMsg:
-		// Release finalizes the selection; the highlight stays on as the visual
-		// "what's selected" cue and a right-click copies it. A plain click (no
+		// Release finalizes the selection; auto-copy to clipboard.
+		// The highlight stays on as the visual cue; a plain click (no
 		// drag) clears any prior selection.
-		m.autoScroll = 0 // stop edge auto-scroll
-		if msg.Button == tea.MouseLeft && m.sel.active && m.sel.empty() {
-			m.sel = selection{}
+		m.autoScroll = 0
+		if msg.Button == tea.MouseLeft && m.sel.active {
+			if m.sel.empty() {
+				m.sel = selection{}
+			} else {
+				text := m.selectedText()
+				m.sel = selection{}
+				return m, tea.Batch(copyToClipboard(text), finalize(m, cmds))
+			}
 		}
 		return m, nil
 
