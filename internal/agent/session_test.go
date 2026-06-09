@@ -288,6 +288,25 @@ func TestPreviewSessionMalformed(t *testing.T) {
 	}
 }
 
+func TestPreviewSessionCollapsesNewlines(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "session.jsonl")
+	s := NewSession("")
+	s.Add(provider.Message{Role: provider.RoleUser, Content: "# Skill: explore\n> Explore the codebase\n\nSome more text"})
+	s.Save(path)
+
+	preview, turns := previewSession(path)
+	if turns != 1 {
+		t.Errorf("turns = %d, want 1", turns)
+	}
+	if strings.ContainsAny(preview, "\r\n") {
+		t.Errorf("preview should collapse newlines, got %q", preview)
+	}
+	if !strings.Contains(preview, "# Skill: explore") {
+		t.Errorf("preview should keep the first line content, got %q", preview)
+	}
+}
+
 // --- NewSessionPath ---
 
 func TestNewSessionPath(t *testing.T) {

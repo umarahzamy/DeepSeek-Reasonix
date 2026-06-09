@@ -184,6 +184,12 @@ func previewSession(path string) (string, int) {
 			turns++
 			if first == "" {
 				s := strings.TrimSpace(m.Content)
+				// Collapse internal newlines so the preview is a single line.
+				// The raw-mode CLI picker (selectOne) relies on each item occupying
+				// exactly one physical terminal row; embedded \n would break that.
+				s = strings.ReplaceAll(s, "\r\n", " ")
+				s = strings.ReplaceAll(s, "\r", " ")
+				s = strings.ReplaceAll(s, "\n", " ")
 				if r := []rune(s); len(r) > 80 {
 					s = string(r[:77]) + "…"
 				}
