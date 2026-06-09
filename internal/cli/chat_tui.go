@@ -787,24 +787,25 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.PasteMsg:
 		m.lastPasteMsgAt = time.Now()
-		if m.state != tuiRunning && m.attachPastedImages(msg.Content) {
+		clean := ansi.Strip(msg.Content)
+		if m.state != tuiRunning && m.attachPastedImages(clean) {
 			return m, finalize(m, cmds)
 		}
-		if ref, ok := pastedFileRef(msg.Content); ok {
+		if ref, ok := pastedFileRef(clean); ok {
 			m.input.InsertString(ref + " ")
 			m.growInputToFit()
 			m.updateCompletion()
 			return m, finalize(m, cmds)
 		}
-		if !m.chooserTyping() && m.pendingApproval == nil && m.rewind == nil && m.resumePick == nil && m.mcp == nil && m.mcpImport == nil && m.skillPick == nil && m.shouldFoldPaste(msg.Content) {
-			m.insertFoldedPaste(msg.Content)
+		if !m.chooserTyping() && m.pendingApproval == nil && m.rewind == nil && m.resumePick == nil && m.mcp == nil && m.mcpImport == nil && m.skillPick == nil && m.shouldFoldPaste(clean) {
+			m.insertFoldedPaste(clean)
 			m.growInputToFit()
 			m.updateCompletion()
 			return m, finalize(m, cmds)
 		}
 		// Small paste: insert raw text so formatting (newlines, indentation)
 		// is visible in the input box immediately.
-		m.input.InsertString(msg.Content)
+		m.input.InsertString(clean)
 		m.growInputToFit()
 
 	case tea.KeyPressMsg:
@@ -1279,15 +1280,16 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case msg.path != "":
 			m.insertImageRef(msg.path)
 		case msg.text != "":
-			if m.attachPastedImages(msg.text) {
+			clean := ansi.Strip(msg.text)
+			if m.attachPastedImages(clean) {
 				return m, finalize(m, cmds)
 			}
-			if ref, ok := pastedFileRef(msg.text); ok {
+			if ref, ok := pastedFileRef(clean); ok {
 				m.input.InsertString(ref + " ")
-			} else if m.shouldFoldPaste(msg.text) {
-				m.insertFoldedPaste(msg.text)
+			} else if m.shouldFoldPaste(clean) {
+				m.insertFoldedPaste(clean)
 			} else {
-				m.input.InsertString(msg.text)
+				m.input.InsertString(clean)
 			}
 			m.growInputToFit()
 			m.updateCompletion()
