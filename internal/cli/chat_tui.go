@@ -900,7 +900,7 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.acceptCompletion()
 				return m, nil
-			case "esc":
+			case "esc", "ctrl+[":
 				m.completion = completion{}
 				if m.state == tuiRunning {
 					break // a turn is running — also cancel it via the main Esc handler
@@ -933,7 +933,7 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.resetQueueNavigation()
 		}
 		switch msg.String() {
-		case "esc":
+		case "esc", "ctrl+[":
 			// "Back out" of the most specific in-progress state: un-send a just-sent
 			// turn (server not yet replied), cancel a streaming turn, turn plan mode
 			// off, or clear typed-but-unsent input. YOLO mode is only exited via
