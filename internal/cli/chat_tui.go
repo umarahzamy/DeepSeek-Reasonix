@@ -62,6 +62,9 @@ type chatTUI struct {
 	submittedInputDraft  string
 	pastedBlocks         []pastedBlock
 	nextPasteID          int
+	// lastPasteMsgAt guards against double-paste when the terminal sends both
+	// tea.PasteMsg and the ctrl+v key event in the same frame.
+	lastPasteMsgAt time.Time
 
 	state    tuiState
 	runStart time.Time
@@ -777,6 +780,7 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.PasteMsg:
+		m.lastPasteMsgAt = time.Now()
 		if m.state != tuiRunning && m.attachPastedImages(msg.Content) {
 			return m, finalize(m, cmds)
 		}
@@ -792,6 +796,10 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.updateCompletion()
 			return m, finalize(m, cmds)
 		}
+		// Small paste: insert raw text so formatting (newlines, indentation)
+		// is visible in the input box immediately.
+		m.input.InsertString(msg.Content)
+		m.growInputToFit()
 
 	case tea.KeyPressMsg:
 		// Any keystroke dismisses a finished selection (copy is a right-click),
@@ -993,6 +1001,9 @@ func (m chatTUI) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+v", "ctrl+shift+v", "super+v", "meta+v":
 			if m.state == tuiRunning {
 				return m, nil
+			}
+			if time.Since(m.lastPasteMsgAt) < 100*time.Millisecond {
+				break // already handled by the PasteMsg handler
 			}
 			cmds = append(cmds, pasteClipboard())
 			return m, finalize(m, cmds)
@@ -2550,8 +2561,8 @@ func clampStatusLine(s string, width int) string {
 // growInputToFit resizes the textarea to the number of lines its value spans,
 // capped at maxInputRows so a long paste doesn't crowd the screen.
 const maxInputRows = 11
-const foldedPasteMinChars = 1000
-const foldedPasteMinLines = 5
+const foldedPasteMinChars = 3000
+const foldedPasteMinLines = 15
 
 type pastedBlock struct {
 	label string
