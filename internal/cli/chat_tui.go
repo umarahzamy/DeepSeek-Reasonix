@@ -469,7 +469,7 @@ func newChatTUI(ctrl *control.Controller, missing string, eventCh chan event.Eve
 func configureChatTextarea(ti *textarea.Model) {
 	ti.Prompt = ""
 	ti.CharLimit = 16384
-	ti.DynamicHeight = true
+	ti.DynamicHeight = false
 	ti.MinHeight = 1
 	ti.MaxHeight = maxInputRows
 	ti.MaxContentHeight = ti.CharLimit
@@ -2549,7 +2549,7 @@ func clampStatusLine(s string, width int) string {
 
 // growInputToFit resizes the textarea to the number of lines its value spans,
 // capped at maxInputRows so a long paste doesn't crowd the screen.
-const maxInputRows = 5
+const maxInputRows = 11
 const foldedPasteMinChars = 1000
 const foldedPasteMinLines = 5
 
@@ -2649,9 +2649,6 @@ func (m *chatTUI) clearSubmittedPastes() {
 }
 
 func (m *chatTUI) growInputToFit() {
-	if m.input.DynamicHeight {
-		return
-	}
 	lines := strings.Count(m.input.Value(), "\n") + 1
 	if lines < 1 {
 		lines = 1
